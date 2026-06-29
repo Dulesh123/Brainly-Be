@@ -8,9 +8,9 @@ dotenv.config();
 // Fix #1: Create transporter once, outside the handler
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  family: 4, // 👈 force IPv4
+  port: 587,
+  secure: false,   // STARTTLS, not SSL
+  family: 4,
   auth: {
     user: process.env.EMAIL,
     pass: process.env.APP_PASSWORD,
