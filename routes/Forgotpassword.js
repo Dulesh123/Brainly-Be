@@ -1,35 +1,23 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import crypto from "crypto";
 import dotenv from "dotenv";
-import {UserModel} from "../db/db_schema.js";
+import { UserModel } from "../db/db_schema.js";
 
 dotenv.config();
 
-// Fix #1: Create transporter once, outside the handler
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,   // STARTTLS, not SSL
-  family: 4,
-  auth: {
-    user: process.env.EMAIL,
-    pass: process.env.APP_PASSWORD,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 export default async function Forgotpassword(req, res) {
   const { email } = req.body;
-
   try {
     const user = await UserModel.findOne({ email });
 
-    // Fix #2: Never reveal whether the email exists (prevents user enumeration)
     if (!user) {
       return res.status(200).json({
         message: "If that email is registered, a reset link has been sent.",
       });
     }
 
-    // Fix #3: Reject if a valid token was already issued recently
     if (user.resettoken && user.resettokenexpiry > Date.now()) {
       return res.status(429).json({
         message: "A reset link was already sent. Please wait before requesting another.",
@@ -44,16 +32,13 @@ export default async function Forgotpassword(req, res) {
 
     user.resettoken = hashedToken;
     user.resettokenexpiry = Date.now() + 5 * 60 * 1000;
-
     await user.save();
 
-    // Fix #4: Use env variable instead of hardcoded localhost
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/?t=${resetToken}`;
 
-    // Fix #5: If email fails, clear the token so it doesn't become orphaned
     try {
-      await transporter.sendMail({
-        from: process.env.EMAIL,
+      await resend.emails.send({
+        from: "onboarding@resend.dev", // replace with your domain later e.g. "no-reply@yourdomain.com"
         to: user.email,
         subject: "Password Reset Request",
         html: `
@@ -68,16 +53,14 @@ export default async function Forgotpassword(req, res) {
       user.resettoken = undefined;
       user.resettokenexpiry = undefined;
       await user.save();
-      throw mailError; // Re-throw to hit the outer catch and return 500
+      throw mailError;
     }
 
     return res.status(200).json({
       message: "If that email is registered, a reset link has been sent.",
     });
-
   } catch (e) {
     console.error(e);
-
     return res.status(500).json({
       message: "Something went wrong. Please try again later.",
     });
