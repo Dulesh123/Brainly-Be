@@ -1,11 +1,19 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import { UserModel } from "../db/db_schema.js";
 
 dotenv.config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.BREVO_SMTP_USER,   // from Brevo SMTP settings (your login email)
+    pass: process.env.BREVO_SMTP_KEY,    // from Brevo SMTP settings (the key/password)
+  },
+});
 
 export default async function Forgotpassword(req, res) {
   const { email } = req.body;
@@ -37,8 +45,8 @@ export default async function Forgotpassword(req, res) {
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/?t=${resetToken}`;
 
     try {
-      await resend.emails.send({
-        from: "supportbrainvault@gmail.com", // replace with your domain later e.g. "no-reply@yourdomain.com"
+      await transporter.sendMail({
+        from: `"Brainly" <${process.env.BREVO_SMTP_USER}>`,
         to: user.email,
         subject: "Password Reset Request",
         html: `
