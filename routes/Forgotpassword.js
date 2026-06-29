@@ -38,7 +38,7 @@ export default async function Forgotpassword(req, res) {
 
     try {
       await resend.emails.send({
-        from: "onboarding@resend.dev", // replace with your domain later e.g. "no-reply@yourdomain.com"
+        from: "supportbrainvault@gmail.com", // replace with your domain later e.g. "no-reply@yourdomain.com"
         to: user.email,
         subject: "Password Reset Request",
         html: `
