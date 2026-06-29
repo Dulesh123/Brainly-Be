@@ -7,11 +7,16 @@ dotenv.config();
 
 // Fix #1: Create transporter once, outside the handler
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // true only for port 465
   auth: {
     user: process.env.EMAIL,
     pass: process.env.APP_PASSWORD,
   },
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 30000,
 });
 
 export default async function Forgotpassword(req, res) {
