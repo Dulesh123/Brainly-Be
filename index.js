@@ -35,7 +35,7 @@ app.post("/signin", (req, res) => {
   Signin(req, res);
 });
 
-app.post("/postdata", (req, res) => {
+app.post("/postdata",VerifyUser, (req, res) => {
   Postdata(req, res);
 });
 
